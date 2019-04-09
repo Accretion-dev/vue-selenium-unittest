@@ -1,0 +1,57 @@
+{
+  "name": "test-environment",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "test": "vue-cli-service serve",
+    "selenium-test": "nodemon --watch ../backend-src.js --watch run-backend.js --exec 'babel-node --inspect run-backend.js --presets=env'",
+    "serve": "vue-cli-service serve",
+    "build": "vue-cli-service build",
+    "lint": "vue-cli-service lint"
+  },
+  "dependencies": {
+    "axios": "^0.18.0",
+    "core-js": "^2.6.5",
+    "vue": "^2.6.6"
+  },
+  "devDependencies": {
+    "@vue/cli-plugin-babel": "^3.5.0",
+    "@vue/cli-plugin-eslint": "^3.5.0",
+    "@vue/cli-service": "^3.5.0",
+    "babel-cli": "^6.26.0",
+    "babel-eslint": "^10.0.1",
+    "babel-preset-env": "^1.7.0",
+    "eslint": "^5.8.0",
+    "eslint-plugin-vue": "^5.0.0",
+    "nodemon": "^1.18.10",
+    "vue-cli-plugin-scss-base": "^0.1.10",
+    "vue-template-compiler": "^2.5.21"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "rules": {
+      "vue/name-property-casing": 0,
+      "vue/max-attributes-per-line": 0,
+      "vue/html-self-closing": 0,
+      "vue/no-parsing-error": 0,
+      "vue/html-indent": 0,
+      "no-unused-vars": 0,
+      "no-console": 0
+    },
+    "parserOptions": {
+      "parser": "babel-eslint"
+    }
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not ie <= 8"
+  ]
+}
