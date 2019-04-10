@@ -13,7 +13,7 @@ let executor, sessionID
 
 let normalKeys = Array.from('~!@#$%^&*()_+|}{POIUYTREWQASDFGHJKL:"?><MNBVCXZ"}'+"`1234567890-=\\][poiuytrewqasdfghjkl;'/.,mnbvcxz'")
 const modifierKeys = [
-  Key.CTRL,
+  Key.CONTROL,
   Key.ALT,
   Key.SHIFT,
   Key.META,
@@ -22,9 +22,69 @@ let keyPrintMap = new Map()
 for (let each of normalKeys) {
   keyPrintMap.set(each, each)
 }
-let specialKeys = {
-
+let specialKeys = [
+  [Key.CONTROL, 'CONTROL'],
+  [Key.ALT, 'ALT'],
+  [Key.COMMAND, 'COMMAND'],
+  [Key.META, 'META'],
+  [Key.BACK_SPACE, '⌫'],
+  [Key.TAB, "TAB"],
+  [Key.RETURN, "⏎"],
+  [Key.ENTER, "⏎"],
+  [Key.SHIFT, "SHIFT"],
+  [Key.PAUSE, "PAUSE"],
+  [Key.ESCAPE, 'ESC'],
+  [Key.SPACE, '⌴'],
+  [Key.PAGE_UP, 'PgDown'],
+  [Key.PAGE_DOWN, 'PgUP'],
+  [Key.END, 'END'],
+  [Key.HOME, 'HOME'],
+  [Key.ARROW_LEFT, "←"],
+  [Key.LEFT, "←"],
+  [Key.ARROW_UP, "↑"],
+  [Key.UP, "↑"],
+  [Key.ARROW_RIGHT, "→"],
+  [Key.RIGHT, "→"],
+  [Key.ARROW_DOWN, "↓"],
+  [Key.DOWN, "↓"],
+  [Key.INSERT, "INS"],
+  [Key.DELETE, "DEL"],
+  [Key.SEMICOLON, ','],
+  [Key.EQUALS, '='],
+  [Key.NUMPAD0, 'NUMPAD0'],
+  [Key.NUMPAD1, 'NUMPAD1'],
+  [Key.NUMPAD2, 'NUMPAD2'],
+  [Key.NUMPAD3, 'NUMPAD3'],
+  [Key.NUMPAD4, 'NUMPAD4'],
+  [Key.NUMPAD5, 'NUMPAD5'],
+  [Key.NUMPAD6, 'NUMPAD6'],
+  [Key.NUMPAD7, 'NUMPAD7'],
+  [Key.NUMPAD8, 'NUMPAD8'],
+  [Key.NUMPAD9, 'NUMPAD9'],
+  [Key.MULTIPLY, 'MULTIPLY'],
+  [Key.ADD, 'ADD'],
+  [Key.SEPARATOR, 'SEPARATOR'],
+  [Key.SUBTRACT, 'SUBTRACT'],
+  [Key.DECIMAL, 'DECIMAL'],
+  [Key.DIVIDE, 'DIVIDE'],
+  [Key.F1, 'F1'],
+  [Key.F2, 'F2'],
+  [Key.F3, 'F3'],
+  [Key.F4, 'F4'],
+  [Key.F5, 'F5'],
+  [Key.F6, 'F6'],
+  [Key.F7, 'F7'],
+  [Key.F8, 'F8'],
+  [Key.F9, 'F9'],
+  [Key.F10, 'F10'],
+  [Key.F11, 'F11'],
+  [Key.F12, 'F12'],
+]
+for (let each of specialKeys) {
+  keyPrintMap.set(each[0], each[1])
 }
+keyPrintMap.set('`', '\\`')
+keyPrintMap.set('\\', '\\\\')
 /* selenium actions
   actions.click(element)
   actions.contextClick(element)
@@ -36,7 +96,7 @@ let specialKeys = {
     duration: 100, origin: (Origin, WebElement), x, y
   })
   action.press(Button)
-  action.press(Button)
+  action.release(Button)
 */
 class Tester {
   constructor ({name, driver, rootSelector, parent}) {
@@ -63,10 +123,9 @@ class Tester {
 
       window.testEnv = document.querySelector("#test-env")
       window.seleniumTestInfo = window.testEnv.querySelector(".test-info")
-      window.seleniumComment = window.testEnv.querySelector("span.selenium-comment")
-      window.seleniumAction = window.testEnv.querySelector("span.selenium-action")
-      window.seleniumWorking = window.testEnv.querySelector("span.selenium-working")
-      window.seleniumWorking.textContent = "${this.name}"
+      window.seleniumData.comment = ''
+      window.seleniumData.action = ''
+      window.seleniumData.working = "${this.name}"
     `
     this.driver.executeScript(template)
   }
@@ -115,27 +174,38 @@ class Tester {
           if (modifierKeys.includes(eacheach)) {
             actions = actions.keyDown(eacheach)
             reversed.push(eacheach)
+            this.changeAction(`keyDown ${keyPrintMap.get(eacheach)}`)
           } else {
             actions = actions.sendKeys(eacheach)
+            this.changeAction(`key ${keyPrintMap.get(eacheach)}`)
           }
         }
         for (let eacheach of reversed.reverse()) {
           actions = actions.keyUp(eacheach)
+          this.changeAction(`keyUp ${keyPrintMap.get(eacheach)}`)
         }
         await actions.perform()
       } else if (typeof(each) === 'object') {
         let keys = Object.keys(each)
         for (let eachkey of keys) {
           let value = each[eachkey]
-          //if (value instanceof WebElement) {
-          //  let pos = await value.getRect()
-          //  console.log('pos:',pos, 'action:', eachkey)
-          //}
           actions = actions[eachkey](value)
+          if (value instanceof WebElement) {
+            //let pos = await value.getRect()
+            //console.log('pos:',pos, 'action:', eachkey)
+            this.changeAction(`${eachkey}`)
+          } else {
+            this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
+          }
         }
         await actions.perform()
-      } else {
+      } else if (typeof(each) === 'string') {
         await actions.sendKeys(each).perform()
+        if (keyPrintMap.has(each)) {
+          this.changeAction(`key ${keyPrintMap.get(each)}`)
+        } else {
+          this.changeAction(`key String`)
+        }
       }
       if (interval) {
         await this.driver.sleep(interval)
@@ -144,7 +214,7 @@ class Tester {
   }
   async changeWorking (name) {
     let template=`
-      window.seleniumWorking.textContent = \`${name}\`
+      window.seleniumData.working = \`${name}\`
     `
     let result = this.driver.executeScript(template)
   }
@@ -160,7 +230,7 @@ class Tester {
       await this.changeWorking('')
     }
     let template=`
-      window.seleniumComment.textContent = \`${comment}\`
+      window.seleniumData.comment = \`${comment}\`
     `
     let result = this.driver.executeScript(template)
     if (stop) {
@@ -170,11 +240,15 @@ class Tester {
       await this.driver.sleep(delay)
     }
   }
-  async changeAction (key) {
+  async changeAction (action) {
     let template=`
-      window.seleniumAction.textContent = \`${key}\`
+      window.seleniumData.action = \`${action}\`
     `
-    let result = this.driver.executeScript(template)
+    this.driver.executeScript(template)
+    template=`
+      window.seleniumData.action = ''
+    `
+    this.driver.executeScript(template)
   }
 }
 class SeleniumTest {

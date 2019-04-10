@@ -26,5 +26,7 @@ module.exports = {
     'no-unused-vars': 'off',
     'no-console': 'off',
     'vue/html-closing-bracket-spacing': 'off',
+    'vue/no-multi-spaces': 'off',
+    'vue/valid-v-for': 'off',
   }
 }

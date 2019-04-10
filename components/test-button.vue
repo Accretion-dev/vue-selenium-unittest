@@ -1,6 +1,6 @@
 <template>
   <span>
-    <Button :type="running ? 'warning' : 'info'" @click="doTest" size="small" :disabled="disabled">
+    <Button :type="running ? 'warning' : 'info'" size="small" :disabled="disabled" @click="doTest">
       {{ running ? 'Stop' : 'Run' }}
     </Button>
   </span>
@@ -12,17 +12,6 @@ axios.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded
 
 export default {
   name: 'test-button',
-  watch: {
-    running (newValue, oldValue) {
-      console.log(newValue, oldValue)
-      if (!newValue && oldValue) {
-        this.disabled = true
-        setTimeout(() => {
-          this.disabled = false
-        }, 1500)
-      }
-    }
-  },
   props: {
     name: {
       required: true,
@@ -36,6 +25,17 @@ export default {
   data () {
     return {
       disabled: false
+    }
+  },
+  watch: {
+    running (newValue, oldValue) {
+      console.log(newValue, oldValue)
+      if (!newValue && oldValue) {
+        this.disabled = true
+        setTimeout(() => {
+          this.disabled = false
+        }, 1500)
+      }
     }
   },
   methods: {

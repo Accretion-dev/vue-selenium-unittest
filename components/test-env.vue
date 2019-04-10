@@ -1,16 +1,26 @@
 <template>
   <div id="test-env" class="test-env">
-    <div class="test-info" v-show="running">
+    <div v-show="running" class="test-info">
       <clip-loader :loading="true" color="green" size="40px" style=".loader"/>
       <div class="">
         <h3>
-          <span style="padding-left: 5px;"> {{working}}: </span>
-          <span ref="comment" class="selenium-comment"/>
+          <span style="padding-left: 5px;"> {{ working }}: </span>
+          <span ref="comment" class="selenium-comment">{{ comment }}</span>
         </h3>
-        <p ref='keys' class="keys"> </p>
+        <p ref="keys" class="keys">
+          <span ref="modifier">
+            <Button v-for="{name, type, count} of actions"
+                    :key="count"
+                    :type="typeMap[type]"
+                    :ghost="ghostMap[type]"
+                    class="key-button"
+                    size="small"
+            >
+              {{ name in symbolMap ? symbolMap[name] : name }}
+            </Button>
+          </span>
+        </p>
       </div>
-      <span ref="action" class="selenium-action"/>
-      <span ref="working" class="selenium-working"/>
     </div>
     <slot> </slot>
   </div>
@@ -18,6 +28,52 @@
 
 <script>
 import ClipLoader from 'vue-spinner/src/ClipLoader.vue'
+const symbolMap = {
+  CONTROL: '⌃',
+  ALT: '⌥',
+  COMMAND: '⌘',
+  META: '⌘',
+  BACK_SPACE: '⌫',
+  TAB: "TAB",
+  RETURN: "⏎",
+  ENTER: "⏎",
+  SHIFT: "⇧",
+  PAUSE: "PAUSE",
+  ESCAPE: 'ESC',
+  SPACE: '⌴',
+  PAGE_UP: 'PgDown',
+  PAGE_DOWN: 'PgUP',
+  END: 'END',
+  HOME: 'HOME',
+  ARROW_LEFT: "←",
+  LEFT: "←",
+  ARROW_UP: "↑",
+  UP: "↑",
+  ARROW_RIGHT: "→",
+  RIGHT: "→",
+  ARROW_DOWN: "↓",
+  DOWN: "↓",
+  INSERT: "INS",
+  DELETE: "DEL",
+  SEMICOLON: ',',
+  EQUALS: '=',
+  NUMPAD0: 'NUM0',
+  NUMPAD1: 'NUM1',
+  NUMPAD2: 'NUM2',
+  NUMPAD3: 'NUM3',
+  NUMPAD4: 'NUM4',
+  NUMPAD5: 'NUM5',
+  NUMPAD6: 'NUM6',
+  NUMPAD7: 'NUM7',
+  NUMPAD8: 'NUM8',
+  NUMPAD9: 'NUM9',
+  MULTIPLY: '*',
+  ADD: '+',
+  SEPARATOR: ',',
+  SUBTRACT: '-',
+  DECIMAL: '.',
+  DIVIDE: '/',
+}
 export default {
   name: 'test-env',
   components: {ClipLoader},
@@ -26,26 +82,55 @@ export default {
   data () {
     return {
       running: false,
+      comment: '',
+      symbolMap,
+      typeMap: {
+        key: 'default',
+        keyDown: 'primary',
+        keyUp: 'default',
+      },
+      ghostMap: {
+        key: false,
+        keyDown: false,
+        keyUp: true,
+      },
       working: '',
+      modifiers: ['CONTROL', 'ALT', "META", 'SHIFT'],
+      maxActions: 15,
+      timeout: 5000,
+      actions: [],
+      timers: [],
+      actionCount: 0,
     }
   },
   mounted () {
-    const MutationObserverConfig={
-      childList: true,
-      subtree: true,
-      characterData: true
-    }
-    let obs_comment = new MutationObserver((mutations) => {
-      if (this.$refs.comment.textContent) {
-        this.running = true
-      } else {
-        this.running = false
+    this.$watch('seleniumData.action', (action) => {
+      if (!action) return
+      let [type, name] = action.split(' ')
+      this.actionCount += 1
+      let count = this.actionCount
+      if (type === 'key') {
+        this.addAction({type, name, count})
+      } else if (type === 'keyUp') {
+        if (this.modifiers.includes(name)) {
+          this.addAction({type, name, count})
+        }
+      } else if (type === 'keyDown') {
+        if (this.modifiers.includes(name)) {
+          this.addAction({type, name, count})
+        }
+      } else if (type === 'click') {
+      } else if (type === 'click') {
+      } else if (type === 'contextClick') {
+      } else if (type === 'doubleClick') {
+      } else if (type === 'dragAndDrop') {
+      } else if (type === 'move') {
+      } else if (type === 'press') {
+      } else if (type === 'release') {
       }
     })
-    obs_comment.observe(this.$refs.comment, MutationObserverConfig)
-
-    let obs_working = new MutationObserver((mutations) => {
-      this.working = this.$refs.working.textContent
+    this.$watch('seleniumData.working', (working) => {
+      this.working = working
       if (this.working) {
         this.$slots.default.forEach(vnode => {
           if (!vnode.componentOptions.componentOptions === 'test-block') return
@@ -62,17 +147,54 @@ export default {
         })
       }
     })
-    obs_working.observe(this.$refs.working, MutationObserverConfig)
-  }
+    this.$watch('seleniumData.comment', (comment) => {
+      this.comment = comment
+      if (comment) {
+        this.running = true
+      } else {
+        this.running = false
+      }
+    })
+  },
+  methods: {
+    addAction (action) {
+      if (this.actions.length <= this.maxActions) {
+        this.actions.splice(0, 0, action)
+        //this.timers.push(setTimeout(() => {
+        //  this.actions.pop()
+        //  this.timers.pop()
+        //}, this.timeout))
+      } else {
+        this.actions.pop()
+        let timer = this.timers.pop()
+        clearTimeout(timer)
+        this.actions.splice(0, 0, action)
+        //this.timers.push(setTimeout(() => {
+        //  this.actions.pop()
+        //  this.timers.pop()
+        //}, this.timeout))
+      }
+    }
+  },
 }
 </script>
 
-<style scoped>
+<style lang="scss">
 .keys {
   padding-left: 5px;
 }
-.loader {
-
+.key-button:first-child {
+  position: relative;
+  left: 10px;
+  top: 10px;
+  transform: scale(1.8);
+  padding: 2px;
+  z-index: +1;
+}
+.key-button {
+  position: relative;
+  top: 10px;
+  left: 25px;
 }
 .test-env {
   background:#eee;
@@ -82,12 +204,6 @@ export default {
 }
 .selenium-comment {
   font-weight: initial;
-}
-.selenium-action {
-  visibility: hidden;
-}
-.selenium-working {
-  visibility: hidden;
 }
 .test-info {
   position: fixed;
