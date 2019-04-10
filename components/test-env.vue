@@ -1,6 +1,7 @@
 <template>
   <div id="test-env" class="test-env">
     <div v-show="running" class="test-info">
+      <Icon v-show="mouse" type="ios-nutrition" class="mouse-pointer"/>
       <clip-loader :loading="true" color="green" size="40px" style=".loader"/>
       <div class="">
         <h3>
@@ -88,13 +89,18 @@ export default {
         key: 'default',
         keyDown: 'primary',
         keyUp: 'default',
+        click: 'default',
+        contextClick: 'default',
       },
       ghostMap: {
         key: false,
         keyDown: false,
         keyUp: true,
+        click: false,
+        contextClick: false,
       },
       working: '',
+      mouse: false,
       modifiers: ['CONTROL', 'ALT', "META", 'SHIFT'],
       maxActions: 15,
       timeout: 5000,
@@ -120,8 +126,9 @@ export default {
           this.addAction({type, name, count})
         }
       } else if (type === 'click') {
-      } else if (type === 'click') {
+        this.addAction({type, name:'CL', count})
       } else if (type === 'contextClick') {
+        this.addAction({type, name:'CR', count})
       } else if (type === 'doubleClick') {
       } else if (type === 'dragAndDrop') {
       } else if (type === 'move') {
@@ -195,6 +202,9 @@ export default {
   position: relative;
   top: 10px;
   left: 25px;
+}
+.mouse-pointer {
+  position: fixed;
 }
 .test-env {
   background:#eee;
