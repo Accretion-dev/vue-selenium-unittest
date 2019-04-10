@@ -5,11 +5,13 @@ import tcpPortUsed from 'tcp-port-used'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
-const {Builder, By, Key, until, WebDriver} = require('selenium-webdriver')
+const {Builder, By, Key, until, WebDriver, Button, Origin, WebElement} = require('selenium-webdriver')
+const {Options} = require('selenium-webdriver/chrome')
 const Http = require('selenium-webdriver/http')
 let driver, t
 let executor, sessionID
 
+let normalKeys = Array.from('~!@#$%^&*()_+|}{POIUYTREWQASDFGHJKL:"?><MNBVCXZ"}'+"`1234567890-=\\][poiuytrewqasdfghjkl;'/.,mnbvcxz'")
 const modifierKeys = [
   Key.CTRL,
   Key.ALT,
@@ -17,15 +19,27 @@ const modifierKeys = [
   Key.META,
 ]
 let keyPrintMap = new Map()
-for (let each of Array.from('~!@#$%^&*()_+|}{POIUYTREWQASDFGHJKL:"?><MNBVCXZ"}'+"`1234567890-=\\][poiuytrewqasdfghjkl;'/.,mnbvcxz'")) {
+for (let each of normalKeys) {
   keyPrintMap.set(each, each)
 }
 let specialKeys = {
 
 }
-
+/* selenium actions
+  actions.click(element)
+  actions.contextClick(element)
+  actions.doubleClick(element)
+  actions.dragAndDrop(from, to)
+  actions.keyDown(key)
+  actions.keyUp(key)
+  actions.move({
+    duration: 100, origin: (Origin, WebElement), x, y
+  })
+  action.press(Button)
+  action.press(Button)
+*/
 class Tester {
-  constructor ({name, driver, rootSelector, commentSelector, keySelector, parent}) {
+  constructor ({name, driver, rootSelector, parent}) {
     if (typeof(rootSelector)!=='string') throw Error('root selector must be a string')
     this.parent = parent
     this.parent.tasks[name] = this
@@ -34,46 +48,68 @@ class Tester {
     this.d = this.driver
     this.rootSelector = rootSelector
     let root = driver.findElement(By.css(rootSelector))
+    let testEnv = driver.findElement(By.css('#test-env'))
+    this.testEnv = testEnv
     this.root = root
     this.r = root
-    this.commentSelector = commentSelector || 'span.selenium-comment'
-    this.keySelector = keySelector || 'span.selenium-key'
     this.running = true
     let template=`
       if (!window.seleniumRoot) {
         window.seleniumRoot = new Map()
-        window.seleniumComment = new Map()
-        window.seleniumKey = new Map()
       }
       let root = document.querySelector("${this.rootSelector}")
       if (!root) { throw Error(\`no root element found with css(${this.rootSelector})\`) }
       window.seleniumRoot.set("${this.name}", root)
-      let comment = root.querySelector("${this.commentSelector}")
-      if (!comment) { throw Error(\`no comment element found with css(${this.commentSelector})\`) }
-      window.seleniumComment.set("${this.name}", comment)
-      let key = root.querySelector("${this.keySelector}")
-      if (!key) { throw Error(\`no key element found with css(${this.commentSelector})\`) }
-      window.seleniumKey.set("${this.name}", key)
+
+      window.testEnv = document.querySelector("#test-env")
+      window.seleniumTestInfo = window.testEnv.querySelector(".test-info")
+      window.seleniumComment = window.testEnv.querySelector("span.selenium-comment")
+      window.seleniumAction = window.testEnv.querySelector("span.selenium-action")
+      window.seleniumWorking = window.testEnv.querySelector("span.selenium-working")
+      window.seleniumWorking.textContent = "${this.name}"
     `
-    let result = this.driver.executeScript(template)
+    this.driver.executeScript(template)
   }
   setRunning (bool) {
     this.running = bool
   }
-  async sendKeys({keys, interval, delay}) {
-    if (!Array.isArray(keys)) {
-      keys = Array.from(keys)
+  async initScroll () {
+    await this.changeComment(`Starting test: ${this.name}`)
+    await this.scrollIntoView(this.root)
+  }
+  async scrollIntoView (el, top) {
+    if (!top) top = 0
+    this.driver.executeScript(`
+      let el = arguments[0];
+      let elementRect = el.getBoundingClientRect();
+      let absoluteElementTop = elementRect.top - window.seleniumTestInfo.offsetHeight - ${top};
+      console.log(elementRect.top, window.seleniumTestInfo.offsetHeight, top)
+      if (absoluteElementTop>0) {
+        window.scrollTo(0, absoluteElementTop)
+      }
+    `, el)
+  }
+  async actions({actions, interval, delay}) {
+    //let window_size = await this.parent.window.getSize()
+    //if (!Array.isArray(actions)) {
+    //  actions = Array.from(actions)
+    //}
+    let this_actions
+    if (!Array.isArray(actions) && typeof(actions) === 'object') {
+       this_actions = [actions]
+    } else {
+      this_actions = actions
     }
     if (delay){
       await this.driver.sleep(delay)
     }
-    for (let each of keys) {
+    for (let each of this_actions) {
       if (!this.running) {
         this.changeComment('', null, each)
         throw Error('Stop in sendKeys at sending:', each)
       }
-      let actions = this.driver.actions()
-      if (Array.isArray(each)) {
+      let actions = this.driver.actions({bridge: true})
+      if (Array.isArray(each)) { // key with modifier
         let reversed = []
         for (let eacheach of each) {
           if (modifierKeys.includes(eacheach)) {
@@ -87,6 +123,17 @@ class Tester {
           actions = actions.keyUp(eacheach)
         }
         await actions.perform()
+      } else if (typeof(each) === 'object') {
+        let keys = Object.keys(each)
+        for (let eachkey of keys) {
+          let value = each[eachkey]
+          //if (value instanceof WebElement) {
+          //  let pos = await value.getRect()
+          //  console.log('pos:',pos, 'action:', eachkey)
+          //}
+          actions = actions[eachkey](value)
+        }
+        await actions.perform()
       } else {
         await actions.sendKeys(each).perform()
       }
@@ -94,6 +141,12 @@ class Tester {
         await this.driver.sleep(interval)
       }
     }
+  }
+  async changeWorking (name) {
+    let template=`
+      window.seleniumWorking.textContent = \`${name}\`
+    `
+    let result = this.driver.executeScript(template)
   }
   async changeComment (comment, delay, stopMessage) {
     let stop
@@ -104,9 +157,10 @@ class Tester {
     }
     if (!comment) {
       this.running = false
+      await this.changeWorking('')
     }
     let template=`
-      window.seleniumComment.get("${this.name}").textContent = \`${comment}\`
+      window.seleniumComment.textContent = \`${comment}\`
     `
     let result = this.driver.executeScript(template)
     if (stop) {
@@ -116,14 +170,13 @@ class Tester {
       await this.driver.sleep(delay)
     }
   }
-  async changeKey (key) {
+  async changeAction (key) {
     let template=`
-      window.seleniumKey.get("${this.name}").textContent = \`${key}\`
+      window.seleniumAction.textContent = \`${key}\`
     `
     let result = this.driver.executeScript(template)
   }
 }
-
 class SeleniumTest {
   constructor ({options, tests}) {
     this.tests = tests
@@ -152,20 +205,31 @@ class SeleniumTest {
   }
   async openChrome(url) {
     let browser = 'chrome'
+    if (this.options.window_size) {
+      this.window_size = this.options.window_size
+    } else {
+      this.window_size = {height: 720, width: 720}
+    }
     if (sessionID) {
       this.driver = await new WebDriver( sessionID, executor )
     } else {
+      let options = new Options()
+      options.addArguments(`--window-size=${this.window_size.width},${this.window_size.height}`)
       this.driver = await new Builder()
         .forBrowser(browser)
+        .setChromeOptions(options)
         .build()
       sessionID = await this.driver.getSession()
       sessionID = sessionID.id_
       executor = await this.driver.getExecutor()
     }
+    this.window = await this.driver.manage().window()
+    //await this.window.setPosition(10, 10)
+    //await this.window.setSize(400, 400)
+    //console.log(await this.window.getSize())
     await this.driver.get(url)
     return this.driver
   }
-
   block ({name, rootSelector, commentSelector, keySelector}) {
     return new Tester({
       name, rootSelector, commentSelector, keySelector,
@@ -195,16 +259,19 @@ class SeleniumTest {
         let name = data.name
         res.write(JSON.stringify({ok: true, data: name}))
         res.end()
-        console.log('do test:', name)
+        console.log('start test:', name)
         if (!this.tests[name]) {
-          console.log(this.tests)
-          throw Error('no test named', name)
+          console.log('exists tests:', Object.keys(this.tests))
+          console.error('no test named', name)
+          return
         }
         if (!(this.tasks[name] && this.tasks[name].running)) {
           this.tests[name]({
             name,
             Key,
             By,
+            Button,
+            Origin,
             until,
             driver: this.driver,
             Test: this
@@ -236,5 +303,4 @@ class SeleniumTest {
     }
   }
 }
-
 export default SeleniumTest

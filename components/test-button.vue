@@ -29,8 +29,8 @@ export default {
       type: String,
     },
     running: {
-      required: true,
       type: Boolean,
+      default: false,
     },
   },
   data () {
