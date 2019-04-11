@@ -12,6 +12,7 @@ let tests = {
     let interval = 50
     let app = await driver.findElement({id: 'app'})
     t = Test.block({name, rootSelector})
+    await t.init()
     await t.initScroll()
     let root = await driver.findElement(By.css(rootSelector))
     let inputs = await root.findElements({tagName: 'input'})
@@ -100,20 +101,30 @@ let tests = {
       [Key.CONTROL, 'a'],
       Key.BACK_SPACE,
     ], interval: 50})
-    await t.changeComment('all done', 30000)
+    await t.changeComment('all done', 5000)
     await t.changeComment('')
   },
   'mouse': async ({name, driver, Test, Key, By, until, Button, Origin}) => {
     let data, actions, input
     let rootSelector = "#mouse-id"
     let interval = 50
-    let app = await driver.findElement({id: 'app'})
     t = Test.block({name, rootSelector})
+    await t.init()
     await t.initScroll()
     let root = await driver.findElement(By.css(rootSelector))
     let buttons = await root.findElements(By.css('.iview-button'))
-
-    await t.changeComment('all done', 30000)
+    await t.actions({actions: [
+      {click: buttons[0]},
+      {click: buttons[1]},
+      {click: buttons[2]},
+      {click: buttons[3]},
+      {doubleClick: buttons[0]},
+      {doubleClick: buttons[0]},
+      {contextClick: buttons[1]},
+      {contextClick: buttons[1]},
+      {contextClick: buttons[1]},
+    ], interval: 5000})
+    await t.changeComment('all done', 5000)
     await t.changeComment('')
   },
   'keyboard+mouse': async ({name, driver, Test, Key, By, until, Button, Origin}) => {

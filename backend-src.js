@@ -113,24 +113,23 @@ class Tester {
     this.root = root
     this.r = root
     this.running = true
+  }
+  setRunning (bool) {
+    this.running = bool
+  }
+  async init () {
     let template=`
-      if (!window.seleniumRoot) {
-        window.seleniumRoot = new Map()
-      }
       let root = document.querySelector("${this.rootSelector}")
       if (!root) { throw Error(\`no root element found with css(${this.rootSelector})\`) }
-      window.seleniumRoot.set("${this.name}", root)
+      window.seleniumData.roots.set("${this.name}", root)
 
-      window.testEnv = document.querySelector("#test-env")
-      window.seleniumTestInfo = window.testEnv.querySelector(".test-info")
+      let testEnv = document.querySelector("#test-env")
+      window.seleniumData.testInfo = testEnv.querySelector(".test-info")
       window.seleniumData.comment = ''
       window.seleniumData.action = ''
       window.seleniumData.working = "${this.name}"
     `
-    this.driver.executeScript(template)
-  }
-  setRunning (bool) {
-    this.running = bool
+    await this.driver.executeScript(template)
   }
   async initScroll () {
     await this.changeComment(`Starting test: ${this.name}`)
@@ -138,14 +137,11 @@ class Tester {
   }
   async scrollIntoView (el, top) {
     if (!top) top = 0
-    this.driver.executeScript(`
+    await this.driver.executeScript(`
       let el = arguments[0];
       let elementRect = el.getBoundingClientRect();
-      let absoluteElementTop = elementRect.top - window.seleniumTestInfo.offsetHeight - ${top};
-      console.log(elementRect.top, window.seleniumTestInfo.offsetHeight, top)
-      if (absoluteElementTop>0) {
-        window.scrollTo(0, absoluteElementTop)
-      }
+      let change = elementRect.top - window.seleniumData.testInfo.offsetHeight - ${top};
+      window.scrollBy(0, change)
     `, el)
   }
   async actions({actions, interval, delay}) {
@@ -191,9 +187,8 @@ class Tester {
           let value = each[eachkey]
           actions = actions[eachkey](value)
           if (value instanceof WebElement) {
-            //let pos = await value.getRect()
-            //console.log('pos:',pos, 'action:', eachkey)
-            this.changeAction(`${eachkey}`)
+            let pos = await value.getRect()
+            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
           } else {
             this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
           }
@@ -216,7 +211,7 @@ class Tester {
     let template=`
       window.seleniumData.working = \`${name}\`
     `
-    let result = this.driver.executeScript(template)
+    let result = await this.driver.executeScript(template)
   }
   async changeComment (comment, delay, stopMessage) {
     let stop
@@ -232,7 +227,7 @@ class Tester {
     let template=`
       window.seleniumData.comment = \`${comment}\`
     `
-    let result = this.driver.executeScript(template)
+    let result = await this.driver.executeScript(template)
     if (stop) {
       throw Error('Stop in comment with comment:', raw_comment)
     }
@@ -244,11 +239,11 @@ class Tester {
     let template=`
       window.seleniumData.action = \`${action}\`
     `
-    this.driver.executeScript(template)
+    await this.driver.executeScript(template)
     template=`
       window.seleniumData.action = ''
     `
-    this.driver.executeScript(template)
+    await this.driver.executeScript(template)
   }
 }
 class SeleniumTest {
@@ -282,7 +277,7 @@ class SeleniumTest {
     if (this.options.window_size) {
       this.window_size = this.options.window_size
     } else {
-      this.window_size = {height: 720, width: 720}
+      this.window_size = {height: 720, width: 1080}
     }
     if (sessionID) {
       this.driver = await new WebDriver( sessionID, executor )
@@ -304,9 +299,9 @@ class SeleniumTest {
     await this.driver.get(url)
     return this.driver
   }
-  block ({name, rootSelector, commentSelector, keySelector}) {
+  block ({name, rootSelector}) {
     return new Tester({
-      name, rootSelector, commentSelector, keySelector,
+      name, rootSelector,
       driver: this.driver,
       parent: this
     })

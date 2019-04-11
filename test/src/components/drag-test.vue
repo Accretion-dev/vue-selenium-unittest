@@ -42,20 +42,6 @@ export default {
       ],
   }},
   methods: {
-    // add child to tree2
-    addChild() {
-      this.tree2data[0].children.push({text: 'child'})
-    },
-    expandAll() {
-      th.breadthFirstSearch(this.tree1data, node => {
-        node.open = true
-      })
-    },
-    collapseAll() {
-      th.breadthFirstSearch(this.tree1data, node => {
-        node.open = false
-      })
-    },
   },
 }
 </script>

@@ -3,6 +3,7 @@ import testBlock from './components/test-block.vue'
 import testButton from './components/test-button.vue'
 import iView from 'iview'
 import 'iview/dist/styles/iview.css'
+import feather from 'vue-icon'
 const plugin = {
   install (Vue, options) {
     if (!options.seleniumPort) throw Error('Error in vue plugin vue-selenium-unittest, need seleniumPort option')
@@ -10,6 +11,8 @@ const plugin = {
       action: '',
       working: '',
       comment: '',
+      testInfo: null,
+      roots: new Map(),
     }
     Vue.use(iView)
     Vue.mixin({
@@ -18,6 +21,19 @@ const plugin = {
           get seleniumData() {
             return window.seleniumData
           }
+        }
+      }
+    })
+    Vue.use(feather, {
+      name: 'v-icon',
+      props: {
+        baseClass: {
+          type: String,
+          default: 'v-icon'
+        },
+        classPrefix: {
+          type: String,
+          default: 'v-icon-'
         }
       }
     })

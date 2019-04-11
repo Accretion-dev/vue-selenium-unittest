@@ -1,7 +1,7 @@
 <template>
   <div id="test-env" class="test-env">
+    <v-icon v-show="mouse" ref="mouse" :name="mouseType" :class="{press, click, release}"/>
     <div v-show="running" class="test-info">
-      <Icon v-show="mouse" type="ios-nutrition" class="mouse-pointer"/>
       <clip-loader :loading="true" color="green" size="40px" style=".loader"/>
       <div class="">
         <h3>
@@ -91,6 +91,11 @@ export default {
         keyUp: 'default',
         click: 'default',
         contextClick: 'default',
+        doubleClick: 'default',
+        press: 'primary',
+        release: 'default',
+        mouve: 'default',
+        dragAndDrop: 'default',
       },
       ghostMap: {
         key: false,
@@ -98,9 +103,20 @@ export default {
         keyUp: true,
         click: false,
         contextClick: false,
+        doubleClick: false,
+        press: false,
+        release: true,
+        move: false,
+        dragAndDrop: false,
       },
       working: '',
       mouse: false,
+      mouseType: 'box',
+      mouseTimer: null,
+      mouseTimeout: 1000,
+      press: false,
+      click: false,
+      release: false,
       modifiers: ['CONTROL', 'ALT', "META", 'SHIFT'],
       maxActions: 15,
       timeout: 5000,
@@ -126,14 +142,22 @@ export default {
           this.addAction({type, name, count})
         }
       } else if (type === 'click') {
+        this.showMouse(name, type)
         this.addAction({type, name:'CL', count})
       } else if (type === 'contextClick') {
+        this.showMouse(name, type)
         this.addAction({type, name:'CR', count})
       } else if (type === 'doubleClick') {
+        this.showMouse(name, type)
+        this.addAction({type, name:'DC', count})
       } else if (type === 'dragAndDrop') {
+        this.addAction({type, name:'DD', count})
       } else if (type === 'move') {
+        this.addAction({type, name:'MO', count})
       } else if (type === 'press') {
+        this.addAction({type, name:'PR', count})
       } else if (type === 'release') {
+        this.addAction({type, name:'RE', count})
       }
     })
     this.$watch('seleniumData.working', (working) => {
@@ -164,6 +188,46 @@ export default {
     })
   },
   methods: {
+    showMouse (pos, type) {
+      pos = JSON.parse(pos)
+      if (type === 'click') {
+        let x = pos.x + pos.width/2 - window.scrollX - 40*0.2
+        let y = pos.y + pos.height/2 - window.scrollY - 40*0.2
+        this.$refs.mouse.$el.style.top = y
+        this.$refs.mouse.$el.style.left = x
+        this.mouseType = 'arrow-up-left'
+        this.mouse = true
+        clearTimeout(this.mouseTimer)
+        setTimeout(() => {
+          this.mouse = false
+        }, this.mouseTimeout)
+      } else if (type === 'doubleClick') {
+        let x = pos.x + pos.width/2 - window.scrollX - 40*0.2
+        let y = pos.y + pos.height/2 - window.scrollY - 40*0.2
+        this.$refs.mouse.$el.style.top = y
+        this.$refs.mouse.$el.style.left = x
+        this.mouseType = 'arrow-up-left'
+        this.mouse = true
+        clearTimeout(this.mouseTimer)
+        setTimeout(() => {
+          this.mouse = false
+        }, this.mouseTimeout)
+      } else if (type === 'contextClick') {
+        let x = pos.x + pos.width/2 - window.scrollX - 40*0.8
+        let y = pos.y + pos.height/2 - window.scrollY - 40*0.2
+        this.$refs.mouse.$el.style.top = y
+        this.$refs.mouse.$el.style.left = x
+        this.mouseType = 'arrow-up-right'
+        this.mouse = true
+        clearTimeout(this.mouseTimer)
+        setTimeout(() => {
+          this.mouse = false
+        }, this.mouseTimeout)
+      } else if (type === 'move') {
+      } else if (type === 'press') {
+      } else if (type === 'release') {
+      }
+    },
     addAction (action) {
       if (this.actions.length <= this.maxActions) {
         this.actions.splice(0, 0, action)
@@ -224,5 +288,35 @@ export default {
   opacity: .95;
   top: 0px;
   display: inline-flex;
+}
+.v-icon {
+  width: 40px;
+  height: 40px;
+  color: black;
+  position: fixed;
+  z-index: +10;
+  top: 0px;
+  left: 0px;
+  pointer-events: none;
+}
+.press {
+  opacity: 1;
+  transform: scale(1.5)
+}
+.release {
+  opacity: 1;
+}
+.click {
+  opacity: 0;
+  animation: click 2s;
+  animation: clickSize 0.5s;
+}
+@keyframes click {
+  from {opacity: 1}
+  to {opacity: 0}
+}
+@keyframes clickSize {
+  from {transform: scale(1.5)}
+  to {transform: scale(1)}
 }
 </style>

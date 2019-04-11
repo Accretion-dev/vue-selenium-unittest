@@ -29,7 +29,6 @@ export default {
   },
   watch: {
     running (newValue, oldValue) {
-      console.log(newValue, oldValue)
       if (!newValue && oldValue) {
         this.disabled = true
         setTimeout(() => {
