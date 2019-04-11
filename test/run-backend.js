@@ -24,11 +24,9 @@ let tests = {
       await t.changeComment('test simple input', 1000)
       input = inputs[0]
       await t.actions({actions: {click: input}})
-      /*
       await t.actions({actions: "0123456789abcdefghABCDEFGH", interval})
       actions = [...Array(30).keys()].map(_ => Key.BACK_SPACE)
       await t.actions({actions, interval})
-      */
 
       await t.changeComment('test special keys', 1000)
       await t.actions({actions: [

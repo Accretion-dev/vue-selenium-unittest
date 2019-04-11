@@ -432,6 +432,11 @@ class SeleniumTest {
     } else {
       let options = new Options()
       options.addArguments(`--window-size=${this.window_size.width},${this.window_size.height}`)
+      if (this.options.chromeProfile) {
+        options.addArguments(`--user-data-dir=${this.options.chromeProfile}`)
+      } else {
+        options.addArguments(`--user-data-dir=./cache/chrome`)
+      }
       this.driver = await new Builder()
         .forBrowser(browser)
         .setChromeOptions(options)
@@ -440,11 +445,19 @@ class SeleniumTest {
       sessionID = sessionID.id_
       executor = await this.driver.getExecutor()
     }
-    this.window = await this.driver.manage().window()
+    //this.window = await this.driver.manage().window()
     //await this.window.setPosition(10, 10)
     //await this.window.setSize(400, 400)
     //console.log(await this.window.getSize())
+    //await this.driver.executeScript("window.open()")
+    //await this.driver.executeScript("window.open()")
+    //let tabs = await this.driver.getAllWindowHandles()
     await this.driver.get(url)
+    //await this.driver.switchTo(tabs[1])
+    //await this.driver.get('https://chrome.google.com/webstore/detail/capture-to-a-gif/eapecadlmfblmnfnojebefkbginhggeh')
+    //await this.driver.switchTo(tabs[2])
+    //await this.driver.get('https://chrome.google.com/webstore/detail/loom-video-recorder-scree/liecbddmkiiihnedobmlmillhodjkdmb')
+    //await this.driver.switchTo(tabs[0])
     return this.driver
   }
   block ({name, rootSelector}) {

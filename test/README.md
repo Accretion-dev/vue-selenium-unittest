@@ -13,3 +13,7 @@ need vue-cli plugins:
 
 # bugs
 * we need to install vue-drawingboard but there only has "@nodopiano/vue-drawingboard", mv the vue-drawingboard to the node_modules folder solve this problem
+
+# good chrome plugins
+* https://chrome.google.com/webstore/detail/capture-to-a-gif/eapecadlmfblmnfnojebefkbginhggeh
+* https://chrome.google.com/webstore/detail/nimbus-screenshot-screen/bpconcjcammlapcogcnnelfmaeghhagj
