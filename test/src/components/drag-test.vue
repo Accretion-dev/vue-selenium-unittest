@@ -19,25 +19,25 @@ export default {
   data () {
     return {
       tree1data: [
-        {text: 'node 1'},
-        {text: 'node 2'},
-        {text: 'node 4'},
-        {text: 'node 5', children: [
-          {text: 'node 1'},
-          {text: 'node 2', children: [
-            {text: 'node 3'},
-            {text: 'node 4'},
+        {text: 'node1'},
+        {text: 'node2'},
+        {text: 'node4'},
+        {text: 'node5', children: [
+          {text: 'node51'},
+          {text: 'node52', children: [
+            {text: 'node521'},
+            {text: 'node522'},
           ]},
-          {text: 'node 2 undroppable', droppable: false, children: [
-            {text: 'node 3'},
-            {text: 'node 4'},
+          {text: 'node53undroppable', droppable: false, children: [
+            {text: 'node531'},
+            {text: 'node532'},
           ]},
-          {text: 'node 2', children: [
-            {text: 'node 3'},
-            {text: 'node 4 undroppable', droppable: false},
+          {text: 'node54', children: [
+            {text: 'node541'},
+            {text: 'node542undroppable', droppable: false},
           ]},
-          {text: 'node 3'},
-          {text: 'node 4'},
+          {text: 'node55'},
+          {text: 'node56'},
         ]},
       ],
   }},

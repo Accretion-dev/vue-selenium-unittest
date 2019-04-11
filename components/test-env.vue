@@ -1,7 +1,14 @@
 <template>
   <div id="test-env" class="test-env">
-    <mouse-icon v-show="mouse" ref="mouse" :name="mouseType" :class="{[mouseStatus]: true}"/>
-    <div v-show="running" class="test-info">
+    <mouse-icon v-show="mouse"
+      ref="mouse"
+      :name="mouseType"
+      :class="{[mouseStatus]: true}"
+    />
+    <Button style="position: fixed; top: 20px; right: 20px; z-index:999;" @click="showInfo = !showInfo">
+      Info Panel
+    </Button>
+    <div v-show="running||showInfo" class="test-info">
       <clip-loader :loading="true" color="green" size="40px" style=".loader"/>
       <div class="">
         <h3>
@@ -85,6 +92,7 @@ export default {
     return {
       running: false,
       comment: '',
+      showInfo: false,
       symbolMap,
       typeMap: {
         key: 'default',
@@ -114,7 +122,7 @@ export default {
       mouse: false,
       mouseType: 'box',
       mouseTimer: null,
-      mouseTimeout: 500,
+      mouseTimeout: 1000,
       mouseStatus: 'release',
       modifiers: ['CONTROL', 'ALT', "META", 'SHIFT'],
       maxActions: 15,
@@ -122,6 +130,8 @@ export default {
       actions: [],
       timers: [],
       actionCount: 0,
+      x: 0,
+      y: 0,
     }
   },
   mounted () {
@@ -190,13 +200,19 @@ export default {
     })
   },
   methods: {
+    moveMouse ({oldPos, newPos, duration}) {
+      console.log(JSON.stringify({oldPos, newPos}))
+      this.$refs.mouse.$el.style.top = newPos.y
+      this.$refs.mouse.$el.style.left = newPos.x
+    },
     showMouse (pos, type) {
       if (type === 'click') {
         pos = JSON.parse(pos)
         let x = pos.x + pos.width/2 - window.scrollX
         let y = pos.y + pos.height/2 - window.scrollY
-        this.$refs.mouse.$el.style.top = y
-        this.$refs.mouse.$el.style.left = x
+        this.moveMouse({newPos: {x, y}, oldPos:{x: this.x, y: this.y}})
+        this.x = x
+        this.y = y
         this.mouseType = 'left'
         this.mouse = true
         this.mouseStatus = 'click'
@@ -208,8 +224,9 @@ export default {
         pos = JSON.parse(pos)
         let x = pos.x + pos.width/2 - window.scrollX
         let y = pos.y + pos.height/2 - window.scrollY
-        this.$refs.mouse.$el.style.top = y
-        this.$refs.mouse.$el.style.left = x
+        this.moveMouse({newPos: {x, y}, oldPos:{x: this.x, y: this.y}})
+        this.x = x
+        this.y = y
         this.mouseType = 'double'
         this.mouseStatus = 'click'
         clearTimeout(this.mouseTimer)
@@ -220,8 +237,9 @@ export default {
         pos = JSON.parse(pos)
         let x = pos.x + pos.width/2 - window.scrollX
         let y = pos.y + pos.height/2 - window.scrollY
-        this.$refs.mouse.$el.style.top = y
-        this.$refs.mouse.$el.style.left = x
+        this.moveMouse({newPos: {x, y}, oldPos:{x: this.x, y: this.y}})
+        this.x = x
+        this.y = y
         this.mouseType = 'right'
         this.mouse = true
         this.mouseStatus = 'click'
@@ -231,21 +249,38 @@ export default {
         }, this.mouseTimeout)
       } else if (type === 'move') {
         pos = JSON.parse(pos)
-        let x = pos.x + pos.width/2 - window.scrollX
-        let y = pos.y + pos.height/2 - window.scrollY
-        this.$refs.mouse.$el.style.top = y
-        this.$refs.mouse.$el.style.left = x
+        if (pos.type === 'element') {
+          let x = pos.x + pos.width/2 - window.scrollX + pos.dx
+          let y = pos.y + pos.height/2 - window.scrollY + pos.dy
+          this.moveMouse({newPos: {x, y}, oldPos:{x: this.x, y: this.y}})
+          this.x = x
+          this.y = y
+        } else if (pos.type === 'viewpoint') {
+          let x = pos.dx
+          let y = pos.dy
+          this.moveMouse({newPos: {x, y}, oldPos:{x: this.x, y: this.y}})
+          this.x = x
+          this.y = y
+        } else {
+          let x = this.x + pos.dx
+          let y = this.y + pos.dy
+          this.moveMouse({newPos: {x, y}, oldPos:{x: this.x, y: this.y}})
+          this.x = x
+          this.y = y
+        }
         this.mouseType = 'move'
         this.mouse = true
-        this.mouseStatus = 'click'
-        clearTimeout(this.mouseTimer)
-        setTimeout(() => {
-          this.mouseStatus = 'release'
-        }, this.mouseTimeout)
+        if (this.mouseStatus !== 'press') {
+          this.mouseStatus = 'click'
+          clearTimeout(this.mouseTimer)
+          setTimeout(() => {
+            this.mouseStatus = 'release'
+          }, this.mouseTimeout)
+        }
       } else if (type === 'press') {
         this.mouseType = pos
         this.mouse = true
-        this.mouseStatus = 'click'
+        this.mouseStatus = 'press'
       } else if (type === 'release') {
         this.mouseStatus = 'release'
         clearTimeout(this.mouseTimer)
@@ -306,8 +341,8 @@ export default {
   font-weight: initial;
 }
 .test-info {
+  z-index: 950;
   position: fixed;
-  z-index: +1;
   background:#eee;
   width: 100%;
   padding: 20px;
@@ -316,11 +351,11 @@ export default {
   display: inline-flex;
 }
 .mouse-icon {
+  z-index: 950;
   width: 40px;
   height: 40px;
   color: black;
   position: fixed;
-  z-index: +10;
   top: 0px;
   left: 0px;
   pointer-events: none;

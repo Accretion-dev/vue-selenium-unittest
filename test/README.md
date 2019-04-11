@@ -10,3 +10,6 @@ now we open a chrome driven by selenium
 # requirement
 need vue-cli plugins:
 * vue-cli-pluin-scss-base
+
+# bugs
+* we need to install vue-drawingboard but there only has "@nodopiano/vue-drawingboard", mv the vue-drawingboard to the node_modules folder solve this problem

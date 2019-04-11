@@ -5,7 +5,8 @@ import tcpPortUsed from 'tcp-port-used'
 import path from 'path'
 import fs from 'fs'
 import os from 'os'
-const {Builder, By, Key, until, WebDriver, Button, Origin, WebElement} = require('selenium-webdriver')
+const {Builder, By, Key, until, WebDriver, Button, WebElement} = require('selenium-webdriver')
+const {Origin} = require('selenium-webdriver/lib/input')
 const {Options} = require('selenium-webdriver/chrome')
 const Http = require('selenium-webdriver/http')
 let driver, t
@@ -103,6 +104,60 @@ const buttonMap = {
   action.press(Button)
   action.release(Button)
 */
+function sumToTotal (x, N) {
+  let X = Math.abs(x)
+  let flag = x > 0 ? 1 : -1
+  let result = []
+  let step = Math.ceil(X/N)
+  let sum = 0
+  for (let index of Array(N)) {
+    if (X > sum) {
+      if (X - sum > step) {
+        sum += step
+        result.push(flag * step)
+      } else {
+        result.push(flag * (X - sum))
+        sum = X
+      }
+    } else {
+      result.push(0)
+    }
+  }
+  return result
+}
+function smoothMove ({x, y, step}) {
+  let nx, ny, xs, ys, N
+  let result = []
+  if (x && y) {
+    nx = Math.ceil((Math.abs(x)/step).toFixed(0))
+    ny = Math.ceil((Math.abs(y)/step).toFixed(0))
+    N = nx > ny ? nx : ny
+    xs = sumToTotal(x, N)
+    ys = sumToTotal(y, N)
+    xs.forEach((_, index) => {
+      if (xs[index] || ys[index]) {
+        result.push({x: xs[index], y: ys[index]})
+      }
+    })
+  } else if (x && !y) {
+    N = Math.ceil((Math.abs(x)/step).toFixed(0))
+    xs = sumToTotal(x, N)
+    xs.forEach((_, index) => {
+      if (xs[index]) {
+        result.push({x: xs[index], y: 0})
+      }
+    })
+  } else if (!x && y) {
+    N = Math.ceil((Math.abs(y)/step).toFixed(0))
+    ys = sumToTotal(y, N)
+    ys.forEach((_, index) => {
+      if (ys[index]) {
+        result.push({y: ys[index], x: 0})
+      }
+    })
+  }
+  return result
+}
 class Tester {
   constructor ({name, driver, rootSelector, parent}) {
     if (typeof(rootSelector)!=='string') throw Error('root selector must be a string')
@@ -149,6 +204,132 @@ class Tester {
       window.scrollBy(0, change)
     `, el)
   }
+  async eachAction (each) {
+    let actions = this.driver.actions({bridge: true})
+    if (Array.isArray(each)) { // key with modifier
+      let reversed = []
+      for (let eacheach of each) {
+        if (typeof(eacheach) === 'object') {
+          await this.eachAction(eacheach)
+        } else {
+          actions = this.driver.actions({bridge: true})
+          if (modifierKeys.includes(eacheach)) {
+            actions = actions.keyDown(eacheach)
+            reversed.push(eacheach)
+            this.changeAction(`keyDown ${keyPrintMap.get(eacheach)}`)
+          } else {
+            actions = actions.sendKeys(eacheach)
+            this.changeAction(`key ${keyPrintMap.get(eacheach)}`)
+          }
+          await actions.perform()
+        }
+      }
+      for (let eacheach of reversed.reverse()) {
+        actions = this.driver.actions({bridge: true})
+        actions = actions.keyUp(eacheach)
+        this.changeAction(`keyUp ${keyPrintMap.get(eacheach)}`)
+        await actions.perform()
+      }
+    } else if (typeof(each) === 'object') {
+      let keys = Object.keys(each)
+      for (let eachkey of keys) {
+        if (eachkey === 'move') {
+          let value = each[eachkey]
+          if (value instanceof WebElement) { // move to an element
+            actions = actions[eachkey]({x:0, y:0, origin: value})
+            let pos = await value.getRect()
+            pos.type = 'element'
+            pos.dx = 0
+            pos.dy = 0
+            pos.duration = 0
+            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+          } else { // should have some parameters
+            let pos = {}
+            let todo = {}
+            let steps, delta
+            if ('el' in value) {
+              pos = await value.el.getRect()
+              todo.origin = value.el
+              todo.duration = value.duration || 0
+              todo.x = 0
+              todo.y = 0
+              pos.type = 'element'
+              if (value.x !== undefined) {
+                pos.dx = value.x || 0
+                pos.dx -= pos.width/2
+                pos.dx = Number(pos.dx.toFixed(0))
+              }
+              if (value.y !== undefined) {
+                pos.dy = value.y || 0
+                pos.dy -= pos.height/2
+                pos.dy = Number(pos.dy.toFixed(0))
+              }
+              pos.duration = value.duration || 0
+              // if not Integer
+              actions = actions[eachkey](todo)
+              actions = actions[eachkey]({origin: Origin.POINTER, x: pos.dx, y: pos.dy})
+            } else {
+              todo.origin = Origin.POINTER
+              pos.type = 'pointer'
+              todo.x = value.x || 0
+              todo.y = value.y || 0
+              todo.duration = value.duration || 0
+              pos.dx = value.x || 0
+              pos.dy = value.y || 0
+              pos.duration = value.duration || 0
+              if (value.step) {
+                steps = smoothMove({x: pos.dx, y: pos.dy, step: value.step})
+                if (value.time) {
+                  delta = Math.ceil(value.time/steps.length)
+                }
+                steps.forEach(_ => {
+                  _.origin = todo.origin
+                })
+                for (let e of steps) {
+                  actions = actions[eachkey](e)
+                  if (delta) {
+                    actions = actions.pause(delta)
+                  }
+                }
+              } else {
+                actions = actions[eachkey](todo)
+              }
+            }
+            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+          }
+        } else if (eachkey === 'press' || eachkey === 'release') {
+          let value = each[eachkey]
+          actions = actions[eachkey](buttonMap[value])
+          if (value instanceof WebElement) {
+            let pos = await value.getRect()
+            this.changeAction(`${eachkey} ${value}`)
+          } else {
+            this.changeAction(`${eachkey} ${value}`)
+          }
+        } else if (eachkey === 'sleep') {
+          let value = each[eachkey]
+          await this.driver.sleep(value)
+        } else { // clicks
+          let value = each[eachkey]
+          actions = actions[eachkey](value)
+          if (value instanceof WebElement) {
+            let pos = await value.getRect()
+            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+          } else {
+            this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
+          }
+        }
+      }
+      await actions.perform()
+    } else if (typeof(each) === 'string') {
+      await actions.sendKeys(each).perform()
+      if (keyPrintMap.has(each)) {
+        this.changeAction(`key ${keyPrintMap.get(each)}`)
+      } else {
+        this.changeAction(`key String`)
+      }
+    }
+  }
   async actions({actions, interval, delay}) {
     //let window_size = await this.parent.window.getSize()
     //if (!Array.isArray(actions)) {
@@ -168,75 +349,7 @@ class Tester {
         this.changeComment('', null, each)
         throw Error('Stop in sendKeys at sending:', each)
       }
-      let actions = this.driver.actions({bridge: true})
-      if (Array.isArray(each)) { // key with modifier
-        let reversed = []
-        for (let eacheach of each) {
-          if (modifierKeys.includes(eacheach)) {
-            actions = actions.keyDown(eacheach)
-            reversed.push(eacheach)
-            this.changeAction(`keyDown ${keyPrintMap.get(eacheach)}`)
-          } else {
-            actions = actions.sendKeys(eacheach)
-            this.changeAction(`key ${keyPrintMap.get(eacheach)}`)
-          }
-        }
-        for (let eacheach of reversed.reverse()) {
-          actions = actions.keyUp(eacheach)
-          this.changeAction(`keyUp ${keyPrintMap.get(eacheach)}`)
-        }
-        await actions.perform()
-      } else if (typeof(each) === 'object') {
-        let keys = Object.keys(each)
-        for (let eachkey of keys) {
-          if (eachkey === 'move') {
-            let value = each[eachkey]
-            if (value instanceof WebElement) { // move to an element
-              actions = actions[eachkey]({x:0, y:0, origin: value})
-              let pos = await value.getRect()
-              pos.dx = 0
-              pos.dy = 0
-              this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
-            } else { // should have some parameters
-              let todo = {}
-              if (el) {
-                todo.origin = el
-              } else {
-                todo.origin = Origin.POINTER
-              }
-              debugger
-              actions = actions[eachkey](todo)
-              this.changeAction(`${eachkey} ${JSON.stringify()}`)
-            }
-          } else if (eachkey === 'press' || eachkey === 'release') {
-            let value = each[eachkey]
-            actions = actions[eachkey](buttonMap[value])
-            if (value instanceof WebElement) {
-              let pos = await value.getRect()
-              this.changeAction(`${eachkey} ${value}`)
-            } else {
-              this.changeAction(`${eachkey} ${value}`)
-            }
-          } else {
-            let value = each[eachkey]
-            actions = actions[eachkey](value)
-            if (value instanceof WebElement) {
-              let pos = await value.getRect()
-              this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
-            } else {
-              this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
-            }
-          }
-        }
-        await actions.perform()
-      } else if (typeof(each) === 'string') {
-        await actions.sendKeys(each).perform()
-        if (keyPrintMap.has(each)) {
-          this.changeAction(`key ${keyPrintMap.get(each)}`)
-        } else {
-          this.changeAction(`key String`)
-        }
-      }
+      await this.eachAction(each, actions)
       if (interval) {
         await this.driver.sleep(interval)
       }
@@ -312,7 +425,7 @@ class SeleniumTest {
     if (this.options.window_size) {
       this.window_size = this.options.window_size
     } else {
-      this.window_size = {height: 720, width: 1080}
+      this.window_size = {height: 900, width: 1080}
     }
     if (sessionID) {
       this.driver = await new WebDriver( sessionID, executor )
