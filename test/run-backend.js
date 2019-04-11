@@ -105,7 +105,7 @@ let tests = {
     await t.changeComment('')
   },
   'mouse': async ({name, driver, Test, Key, By, until, Button, Origin}) => {
-    let data, actions, input
+    let data, actions, input, c
     let rootSelector = "#mouse-id"
     let interval = 50
     t = Test.block({name, rootSelector})
@@ -113,17 +113,32 @@ let tests = {
     await t.initScroll()
     let root = await driver.findElement(By.css(rootSelector))
     let buttons = await root.findElements(By.css('.iview-button'))
-    await t.actions({actions: [
-      {click: buttons[0]},
-      {click: buttons[1]},
-      {click: buttons[2]},
-      {click: buttons[3]},
-      {doubleClick: buttons[0]},
-      {doubleClick: buttons[0]},
-      {contextClick: buttons[1]},
-      {contextClick: buttons[1]},
-      {contextClick: buttons[1]},
-    ], interval: 5000})
+    if(1&&(c="'click, doubleClick and rightClick'")) {
+      await t.changeComment(c, 1000)
+      await t.actions({actions: [
+        {click: buttons[0]},
+        {click: buttons[1]},
+        {click: buttons[2]},
+        {click: buttons[3]},
+        {doubleClick: buttons[0]},
+        {doubleClick: buttons[0]},
+        {contextClick: buttons[1]},
+        {contextClick: buttons[1]},
+        {contextClick: buttons[1]},
+      ], interval: 1000})
+    }
+    if(1&&(c="'move to element'")) {
+      await t.changeComment('move to el', 1000)
+      await t.actions({actions: [
+        {move: buttons[0]},
+        {press: 'left'},
+        {release: 'left'},
+        {move: buttons[1]},
+        {move: buttons[2]},
+        {move: buttons[3]},
+      ], interval: 1000})
+    }
+
     await t.changeComment('all done', 5000)
     await t.changeComment('')
   },

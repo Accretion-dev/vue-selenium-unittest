@@ -85,6 +85,11 @@ for (let each of specialKeys) {
 }
 keyPrintMap.set('`', '\\`')
 keyPrintMap.set('\\', '\\\\')
+const buttonMap = {
+  'left': Button.LEFT,
+  'right': Button.RIGHT,
+  'middle': Button.MIDDLE,
+}
 /* selenium actions
   actions.click(element)
   actions.contextClick(element)
@@ -184,13 +189,43 @@ class Tester {
       } else if (typeof(each) === 'object') {
         let keys = Object.keys(each)
         for (let eachkey of keys) {
-          let value = each[eachkey]
-          actions = actions[eachkey](value)
-          if (value instanceof WebElement) {
-            let pos = await value.getRect()
-            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+          if (eachkey === 'move') {
+            let value = each[eachkey]
+            if (value instanceof WebElement) { // move to an element
+              actions = actions[eachkey]({x:0, y:0, origin: value})
+              let pos = await value.getRect()
+              pos.dx = 0
+              pos.dy = 0
+              this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+            } else { // should have some parameters
+              let todo = {}
+              if (el) {
+                todo.origin = el
+              } else {
+                todo.origin = Origin.POINTER
+              }
+              debugger
+              actions = actions[eachkey](todo)
+              this.changeAction(`${eachkey} ${JSON.stringify()}`)
+            }
+          } else if (eachkey === 'press' || eachkey === 'release') {
+            let value = each[eachkey]
+            actions = actions[eachkey](buttonMap[value])
+            if (value instanceof WebElement) {
+              let pos = await value.getRect()
+              this.changeAction(`${eachkey} ${value}`)
+            } else {
+              this.changeAction(`${eachkey} ${value}`)
+            }
           } else {
-            this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
+            let value = each[eachkey]
+            actions = actions[eachkey](value)
+            if (value instanceof WebElement) {
+              let pos = await value.getRect()
+              this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+            } else {
+              this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
+            }
           }
         }
         await actions.perform()

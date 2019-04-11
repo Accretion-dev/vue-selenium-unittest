@@ -1,6 +1,6 @@
 <template>
   <div id="test-env" class="test-env">
-    <v-icon v-show="mouse" ref="mouse" :name="mouseType" :class="{press, click, release}"/>
+    <mouse-icon v-show="mouse" ref="mouse" :name="mouseType" :class="{[mouseStatus]: true}"/>
     <div v-show="running" class="test-info">
       <clip-loader :loading="true" color="green" size="40px" style=".loader"/>
       <div class="">
@@ -29,6 +29,7 @@
 
 <script>
 import ClipLoader from 'vue-spinner/src/ClipLoader.vue'
+import mouseIcon from './mouse-icon.vue'
 const symbolMap = {
   CONTROL: '⌃',
   ALT: '⌥',
@@ -77,7 +78,7 @@ const symbolMap = {
 }
 export default {
   name: 'test-env',
-  components: {ClipLoader},
+  components: {ClipLoader, mouseIcon},
   props: {
   },
   data () {
@@ -113,10 +114,8 @@ export default {
       mouse: false,
       mouseType: 'box',
       mouseTimer: null,
-      mouseTimeout: 1000,
-      press: false,
-      click: false,
-      release: false,
+      mouseTimeout: 500,
+      mouseStatus: 'release',
       modifiers: ['CONTROL', 'ALT', "META", 'SHIFT'],
       maxActions: 15,
       timeout: 5000,
@@ -153,10 +152,13 @@ export default {
       } else if (type === 'dragAndDrop') {
         this.addAction({type, name:'DD', count})
       } else if (type === 'move') {
+        this.showMouse(name, type)
         this.addAction({type, name:'MO', count})
       } else if (type === 'press') {
+        this.showMouse(name, type)
         this.addAction({type, name:'PR', count})
       } else if (type === 'release') {
+        this.showMouse(name, type)
         this.addAction({type, name:'RE', count})
       }
     })
@@ -189,43 +191,67 @@ export default {
   },
   methods: {
     showMouse (pos, type) {
-      pos = JSON.parse(pos)
       if (type === 'click') {
-        let x = pos.x + pos.width/2 - window.scrollX - 40*0.2
-        let y = pos.y + pos.height/2 - window.scrollY - 40*0.2
+        pos = JSON.parse(pos)
+        let x = pos.x + pos.width/2 - window.scrollX
+        let y = pos.y + pos.height/2 - window.scrollY
         this.$refs.mouse.$el.style.top = y
         this.$refs.mouse.$el.style.left = x
-        this.mouseType = 'arrow-up-left'
+        this.mouseType = 'left'
         this.mouse = true
+        this.mouseStatus = 'click'
         clearTimeout(this.mouseTimer)
         setTimeout(() => {
-          this.mouse = false
+          this.mouseStatus = 'release'
         }, this.mouseTimeout)
       } else if (type === 'doubleClick') {
-        let x = pos.x + pos.width/2 - window.scrollX - 40*0.2
-        let y = pos.y + pos.height/2 - window.scrollY - 40*0.2
+        pos = JSON.parse(pos)
+        let x = pos.x + pos.width/2 - window.scrollX
+        let y = pos.y + pos.height/2 - window.scrollY
         this.$refs.mouse.$el.style.top = y
         this.$refs.mouse.$el.style.left = x
-        this.mouseType = 'arrow-up-left'
-        this.mouse = true
+        this.mouseType = 'double'
+        this.mouseStatus = 'click'
         clearTimeout(this.mouseTimer)
         setTimeout(() => {
-          this.mouse = false
+          this.mouseStatus = 'release'
         }, this.mouseTimeout)
       } else if (type === 'contextClick') {
-        let x = pos.x + pos.width/2 - window.scrollX - 40*0.8
-        let y = pos.y + pos.height/2 - window.scrollY - 40*0.2
+        pos = JSON.parse(pos)
+        let x = pos.x + pos.width/2 - window.scrollX
+        let y = pos.y + pos.height/2 - window.scrollY
         this.$refs.mouse.$el.style.top = y
         this.$refs.mouse.$el.style.left = x
-        this.mouseType = 'arrow-up-right'
+        this.mouseType = 'right'
         this.mouse = true
+        this.mouseStatus = 'click'
+        clearTimeout(this.mouseTimer)
+        setTimeout(() => {
+          this.mouseStatus = 'release'
+        }, this.mouseTimeout)
+      } else if (type === 'move') {
+        pos = JSON.parse(pos)
+        let x = pos.x + pos.width/2 - window.scrollX
+        let y = pos.y + pos.height/2 - window.scrollY
+        this.$refs.mouse.$el.style.top = y
+        this.$refs.mouse.$el.style.left = x
+        this.mouseType = 'move'
+        this.mouse = true
+        this.mouseStatus = 'click'
+        clearTimeout(this.mouseTimer)
+        setTimeout(() => {
+          this.mouseStatus = 'release'
+        }, this.mouseTimeout)
+      } else if (type === 'press') {
+        this.mouseType = pos
+        this.mouse = true
+        this.mouseStatus = 'click'
+      } else if (type === 'release') {
+        this.mouseStatus = 'release'
         clearTimeout(this.mouseTimer)
         setTimeout(() => {
           this.mouse = false
         }, this.mouseTimeout)
-      } else if (type === 'move') {
-      } else if (type === 'press') {
-      } else if (type === 'release') {
       }
     },
     addAction (action) {
@@ -289,7 +315,7 @@ export default {
   top: 0px;
   display: inline-flex;
 }
-.v-icon {
+.mouse-icon {
   width: 40px;
   height: 40px;
   color: black;
@@ -301,22 +327,17 @@ export default {
 }
 .press {
   opacity: 1;
-  transform: scale(1.5)
+  color: red;
 }
 .release {
-  opacity: 1;
+  opacity: 0;
+  animation: release 2s;
 }
 .click {
-  opacity: 0;
-  animation: click 2s;
-  animation: clickSize 0.5s;
+  opacity: 1;
 }
-@keyframes click {
+@keyframes release {
   from {opacity: 1}
   to {opacity: 0}
-}
-@keyframes clickSize {
-  from {transform: scale(1.5)}
-  to {transform: scale(1)}
 }
 </style>
