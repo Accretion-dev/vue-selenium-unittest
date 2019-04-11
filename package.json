@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "cd test; npm i; npm run test",
-    "watch": "babel -D --source-maps inline --out-file backend.js --no-babelrc --presets=es2015 --watch backend-src.js"
+    "watch": "babel -D --source-maps inline --out-dir . --no-babelrc --presets=env --watch src"
   },
   "keywords": [
     "unittest",
@@ -16,6 +16,7 @@
   "license": "MIT",
   "devDependencies": {
     "axios": "^0.18.0",
+    "babel-cli": "^6.26.0",
     "babel-preset-env": "^1.7.0",
     "chromedriver": "^2.46.0",
     "iview": "^3.3.3",

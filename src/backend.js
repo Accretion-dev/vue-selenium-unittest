@@ -454,10 +454,6 @@ class SeleniumTest {
     //let tabs = await this.driver.getAllWindowHandles()
     await this.driver.get(url)
     //await this.driver.switchTo(tabs[1])
-    //await this.driver.get('https://chrome.google.com/webstore/detail/capture-to-a-gif/eapecadlmfblmnfnojebefkbginhggeh')
-    //await this.driver.switchTo(tabs[2])
-    //await this.driver.get('https://chrome.google.com/webstore/detail/loom-video-recorder-scree/liecbddmkiiihnedobmlmillhodjkdmb')
-    //await this.driver.switchTo(tabs[0])
     return this.driver
   }
   block ({name, rootSelector}) {

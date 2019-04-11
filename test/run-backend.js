@@ -1,6 +1,6 @@
 const testConfig = require('./test-config.json')
 // import backend from 'vue-selenium-unittest/backend.js'
-import backend from '../backend-src.js'
+import backend from '../src/backend-src.js'
 let normalKeys = '~!@#$%^&*()_+|}{POIUYTREWQASDFGHJKL:"?><MNBVCXZ"}'+"`1234567890-=\\][poiuytrewqasdfghjkl;'/.,mnbvcxz'"
 let tests = {
   async all ({name, driver, Test, Key, By, until, Button, Origin}) {
