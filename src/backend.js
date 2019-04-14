@@ -216,10 +216,10 @@ class Tester {
           if (modifierKeys.includes(eacheach)) {
             actions = actions.keyDown(eacheach)
             reversed.push(eacheach)
-            this.changeAction(`keyDown ${keyPrintMap.get(eacheach)}`)
+            await this.changeAction(`keyDown ${keyPrintMap.get(eacheach)}`)
           } else {
             actions = actions.sendKeys(eacheach)
-            this.changeAction(`key ${keyPrintMap.get(eacheach)}`)
+            await this.changeAction(`key ${keyPrintMap.get(eacheach)}`)
           }
           await actions.perform()
         }
@@ -227,107 +227,120 @@ class Tester {
       for (let eacheach of reversed.reverse()) {
         actions = this.driver.actions({bridge: true})
         actions = actions.keyUp(eacheach)
-        this.changeAction(`keyUp ${keyPrintMap.get(eacheach)}`)
+        await this.changeAction(`keyUp ${keyPrintMap.get(eacheach)}`)
         await actions.perform()
       }
     } else if (typeof(each) === 'object') {
       let keys = Object.keys(each)
-      for (let eachkey of keys) {
-        if (eachkey === 'move') {
-          let value = each[eachkey]
-          if (value instanceof WebElement) { // move to an element
-            actions = actions[eachkey]({x:0, y:0, origin: value})
-            let pos = await value.getRect()
+      let eachkey = keys[0]
+      if (eachkey === 'move') {
+        let value = each[eachkey]
+        if (value instanceof WebElement) { // move to an element
+          actions = actions[eachkey]({x:0, y:0, origin: value})
+          let pos = await value.getRect()
+          pos.type = 'element'
+          pos.dx = 0
+          pos.dy = 0
+          pos.duration = 0
+          await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+        } else { // should have some parameters
+          let pos = {}
+          let todo = {}
+          let steps, delta
+          if ('el' in value) {
+            pos = await value.el.getRect()
+            todo.origin = value.el
+            todo.duration = value.duration || 0
+            todo.x = 0
+            todo.y = 0
             pos.type = 'element'
-            pos.dx = 0
-            pos.dy = 0
-            pos.duration = 0
-            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
-          } else { // should have some parameters
-            let pos = {}
-            let todo = {}
-            let steps, delta
-            if ('el' in value) {
-              pos = await value.el.getRect()
-              todo.origin = value.el
-              todo.duration = value.duration || 0
-              todo.x = 0
-              todo.y = 0
-              pos.type = 'element'
-              if (value.x !== undefined) {
-                pos.dx = value.x || 0
-                pos.dx -= pos.width/2
-                pos.dx = Number(pos.dx.toFixed(0))
-              }
-              if (value.y !== undefined) {
-                pos.dy = value.y || 0
-                pos.dy -= pos.height/2
-                pos.dy = Number(pos.dy.toFixed(0))
-              }
-              pos.duration = value.duration || 0
-              // if not Integer
-              actions = actions[eachkey](todo)
-              actions = actions[eachkey]({origin: Origin.POINTER, x: pos.dx, y: pos.dy})
-            } else {
-              todo.origin = Origin.POINTER
-              pos.type = 'pointer'
-              todo.x = value.x || 0
-              todo.y = value.y || 0
-              todo.duration = value.duration || 0
+            if (value.x !== undefined) {
               pos.dx = value.x || 0
-              pos.dy = value.y || 0
-              pos.duration = value.duration || 0
-              if (value.step) {
-                steps = smoothMove({x: pos.dx, y: pos.dy, step: value.step})
-                if (value.time) {
-                  delta = Math.ceil(value.time/steps.length)
-                }
-                steps.forEach(_ => {
-                  _.origin = todo.origin
-                })
-                for (let e of steps) {
-                  actions = actions[eachkey](e)
-                  if (delta) {
-                    actions = actions.pause(delta)
-                  }
-                }
-              } else {
-                actions = actions[eachkey](todo)
-              }
+              pos.dx -= pos.width/2
+              pos.dx = Number(pos.dx.toFixed(0))
             }
-            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
-          }
-        } else if (eachkey === 'press' || eachkey === 'release') {
-          let value = each[eachkey]
-          actions = actions[eachkey](buttonMap[value])
-          if (value instanceof WebElement) {
-            let pos = await value.getRect()
-            this.changeAction(`${eachkey} ${value}`)
+            if (value.y !== undefined) {
+              pos.dy = value.y || 0
+              pos.dy -= pos.height/2
+              pos.dy = Number(pos.dy.toFixed(0))
+            }
+            pos.duration = value.duration || 0
+            // if not Integer
+            actions = actions[eachkey](todo)
+            actions = actions[eachkey]({origin: Origin.POINTER, x: pos.dx, y: pos.dy})
           } else {
-            this.changeAction(`${eachkey} ${value}`)
+            todo.origin = Origin.POINTER
+            pos.type = 'pointer'
+            todo.x = value.x || 0
+            todo.y = value.y || 0
+            todo.duration = value.duration || 0
+            pos.dx = value.x || 0
+            pos.dy = value.y || 0
+            pos.duration = value.duration || 0
+            if (value.step) {
+              steps = smoothMove({x: pos.dx, y: pos.dy, step: value.step})
+              if (value.time) {
+                delta = Math.ceil(value.time/steps.length)
+              }
+              steps.forEach(_ => {
+                _.origin = todo.origin
+              })
+              for (let e of steps) {
+                actions = actions[eachkey](e)
+                if (delta) {
+                  actions = actions.pause(delta)
+                }
+              }
+            } else {
+              actions = actions[eachkey](todo)
+            }
           }
-        } else if (eachkey === 'sleep') {
-          let value = each[eachkey]
-          await this.driver.sleep(value)
-        } else { // clicks
-          let value = each[eachkey]
-          actions = actions[eachkey](value)
-          if (value instanceof WebElement) {
-            let pos = await value.getRect()
-            this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
-          } else {
-            this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
-          }
+          await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+        }
+      } else if (eachkey === 'js') {
+        let value = each[eachkey]
+        if (each.el) {
+          await this.changeAction(`${eachkey} `)
+          let template=`
+            let el = arguments[0];
+            ${value}`
+          await this.changeAction(`${eachkey} `)
+          console.log(template)
+          await this.driver.executeScript(template, each.el)
+        } else {
+          await this.changeAction(`${eachkey} `)
+          await this.driver.executeScript(value)
+        }
+      } else if (eachkey === 'press' || eachkey === 'release') {
+        let value = each[eachkey]
+        actions = actions[eachkey](buttonMap[value])
+        if (value instanceof WebElement) {
+          let pos = await value.getRect()
+          await this.changeAction(`${eachkey} ${value}`)
+        } else {
+          await this.changeAction(`${eachkey} ${value}`)
+        }
+      } else if (eachkey === 'sleep') {
+        let value = each[eachkey]
+        await this.driver.sleep(value)
+      } else { // clicks
+        let value = each[eachkey]
+        actions = actions[eachkey](value)
+        if (value instanceof WebElement) {
+          let pos = await value.getRect()
+          await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+        } else {
+          await this.changeAction(`${eachkey} ${keyPrintMap.get(value)}`)
         }
       }
       await actions.perform()
     } else if (typeof(each) === 'string') {
-      await actions.sendKeys(each).perform()
       if (keyPrintMap.has(each)) {
-        this.changeAction(`key ${keyPrintMap.get(each)}`)
+        await this.changeAction(`key ${keyPrintMap.get(each)}`)
       } else {
-        this.changeAction(`key String`)
+        await this.changeAction(`key String`)
       }
+      await actions.sendKeys(each).perform()
     }
   }
   async actions({actions, interval, delay}) {

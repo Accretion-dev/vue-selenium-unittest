@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "test": "vue-cli-service serve",
-    "selenium-test": "nodemon --watch ../backend-src.js --watch run-backend.js --exec 'babel-node --inspect run-backend.js --presets=env'",
+    "selenium-test": "nodemon --watch ../src/backend.js --watch run-backend.js --exec 'babel-node --inspect run-backend.js --presets=env'",
     "serve": "vue-cli-service serve",
     "build": "vue-cli-service build",
     "lint": "vue-cli-service lint"

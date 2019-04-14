@@ -382,6 +382,49 @@ let tests = {
     await t.changeComment('all done', 2000)
     await t.changeComment('')
   },
+  'js': async ({name, driver, Test, Key, By, until, Button, Origin}) => {
+    let data, actions, input,c
+    let rootSelector = "#js-id"
+    let interval = 50
+    let app = await driver.findElement({id: 'app'})
+    t = Test.block({name, rootSelector})
+    await t.init()
+    await t.initScroll()
+    let root = await driver.findElement(By.css(rootSelector))
+    let inputs = await root.findElements({tagName: 'input'})
+
+    await t.changeComment('init test data', 1000)
+    await t.actions({actions: [
+      {click: inputs[0]},
+      "0123456789abcdefghABCDEFGH",
+      {click: inputs[1]},
+      "aaaaaaaaaaaaaaaaaaaaaaaaaa",
+      {click: inputs[2]},
+      "bbbbbbbbbbbbbbbbbbbbbbbbbb",
+      {click: inputs[3]},
+      "cccccccccccccccccccccccccc",
+    ]})
+
+    await t.changeComment('js scrollTo (0,0)', 1000)
+    await t.actions({actions: {js: 'window.scrollTo(0,0)'}})
+    await t.changeComment('js scrollTo (0,1500)', 1000)
+    await t.actions({actions: {js: 'window.scrollTo(0,1500)'}})
+
+    await t.changeComment('js change value1', 2000)
+    await t.actions({actions: {js: 'el.focus();el.value=12312', el:inputs[0]}})
+    await t.changeComment('keyboard change value2', 2000)
+    await t.actions({actions: [
+      {doubleClick: inputs[1]},
+      "blablablablablabla",
+    ]})
+    await t.changeComment('js change selection region', 2000)
+    await t.actions({actions: {js: 'el.focus();el.selectionStart=10;el.selectionEnd=20;', el:inputs[2]}})
+    await t.changeComment('delete selection region', 2000)
+    await t.actions({actions: Key.BACK_SPACE})
+
+    await t.changeComment('all done', 2000)
+    await t.changeComment('')
+  },
 }
 let t = new backend({options: testConfig, tests})
 t.init()

@@ -82,6 +82,7 @@ const symbolMap = {
   SUBTRACT: '-',
   DECIMAL: '.',
   DIVIDE: '/',
+  js: 'JS',
 }
 export default {
   name: 'test-env',
@@ -105,6 +106,7 @@ export default {
         release: 'default',
         mouve: 'default',
         dragAndDrop: 'default',
+        js: 'default',
       },
       ghostMap: {
         key: false,
@@ -117,6 +119,7 @@ export default {
         release: true,
         move: false,
         dragAndDrop: false,
+        js: false,
       },
       working: '',
       mouse: false,
@@ -142,6 +145,8 @@ export default {
       let count = this.actionCount
       if (type === 'key') {
         this.addAction({type, name, count})
+      } else if (type === 'js')   {
+        this.addAction({type, name: 'js', count})
       } else if (type === 'keyUp') {
         if (this.modifiers.includes(name)) {
           this.addAction({type, name, count})

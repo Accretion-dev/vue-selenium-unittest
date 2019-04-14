@@ -7,6 +7,7 @@
           <li> <p class="test-title"> Test keyboard: <test-button name="keyboard"/> </p> </li>
           <li> <p class="test-title"> Test mouse: <test-button name="mouse"/> </p> </li>
           <li> <p class="test-title"> Test mouse-smooth: <test-button name="mouse-smooth"/> </p> </li>
+          <li> <p class="test-title"> Test js: <test-button name="js"/> </p> </li>
         </ul>
       </test-block>
       <test-block title="Test keyboard" name="keyboard" id="keyboard-id">
@@ -81,6 +82,12 @@
         <div>
           <drawing-board-vue board-id="mydrawingboard" height="600px" width="600px" :value="value"></drawing-board-vue>
         </div>
+      </test-block>
+      <test-block title="Test js" name="js" id="js-id">
+        <div> <input v-model="values[4]" placeholder="value0"/> </div>
+        <div> <input v-model="values[5]" placeholder="value1"/> </div>
+        <div> <input v-model="values[6]" placeholder="value2"/> </div>
+        <div> <input v-model="values[7]" placeholder="value3"/> </div>
       </test-block>
     </test-env>
   </div>
