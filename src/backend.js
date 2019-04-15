@@ -235,22 +235,22 @@ class Tester {
       let eachkey = keys[0]
       if (eachkey === 'move') {
         let value = each[eachkey]
+        let pos, todo
         if (value instanceof WebElement) { // move to an element
-          actions = actions[eachkey]({x:0, y:0, origin: value})
-          let pos = await value.getRect()
+          pos = await value.getRect()
           pos.type = 'element'
           if (!each.x && !each.y) {
             pos.dx = 0
             pos.dy = 0
             pos.duration = 0
             await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+            actions = actions[eachkey]({x:0, y:0, origin: value})
           } else {
-            pos = await value.getRect()
+            todo = {}
             todo.origin = value
             todo.duration = each.duration || 0
             todo.x = 0
             todo.y = 0
-            pos.type = 'element'
             if (each.x !== undefined) {
               pos.dx = each.x || 0
               pos.dx -= pos.width/2
@@ -263,12 +263,14 @@ class Tester {
             }
             pos.duration = each.duration || 0
             // if not Integer
-            actions = actions[eachkey](todo)
+            await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+            actions = actions[eachkey]({x:0, y:0, origin: value})
             actions = actions[eachkey]({origin: Origin.POINTER, x: pos.dx, y: pos.dy})
+            console.log(todo, {origin: Origin.POINTER, x: pos.dx, y: pos.dy})
           }
         } else { // should have some parameters
-          let pos = {}
-          let todo = {}
+          pos = {}
+          todo = {}
           let steps, delta
           if ('el' in value) {
             pos = await value.el.getRect()
