@@ -239,10 +239,33 @@ class Tester {
           actions = actions[eachkey]({x:0, y:0, origin: value})
           let pos = await value.getRect()
           pos.type = 'element'
-          pos.dx = 0
-          pos.dy = 0
-          pos.duration = 0
-          await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+          if (!each.x && !each.y) {
+            pos.dx = 0
+            pos.dy = 0
+            pos.duration = 0
+            await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
+          } else {
+            pos = await value.getRect()
+            todo.origin = value
+            todo.duration = each.duration || 0
+            todo.x = 0
+            todo.y = 0
+            pos.type = 'element'
+            if (each.x !== undefined) {
+              pos.dx = each.x || 0
+              pos.dx -= pos.width/2
+              pos.dx = Number(pos.dx.toFixed(0))
+            }
+            if (each.y !== undefined) {
+              pos.dy = each.y || 0
+              pos.dy -= pos.height/2
+              pos.dy = Number(pos.dy.toFixed(0))
+            }
+            pos.duration = each.duration || 0
+            // if not Integer
+            actions = actions[eachkey](todo)
+            actions = actions[eachkey]({origin: Origin.POINTER, x: pos.dx, y: pos.dy})
+          }
         } else { // should have some parameters
           let pos = {}
           let todo = {}
