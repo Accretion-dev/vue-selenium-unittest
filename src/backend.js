@@ -266,7 +266,6 @@ class Tester {
             await this.changeAction(`${eachkey} ${JSON.stringify(pos)}`)
             actions = actions[eachkey]({x:0, y:0, origin: value})
             actions = actions[eachkey]({origin: Origin.POINTER, x: pos.dx, y: pos.dy})
-            console.log(todo, {origin: Origin.POINTER, x: pos.dx, y: pos.dy})
           }
         } else { // should have some parameters
           pos = {}
@@ -336,6 +335,13 @@ class Tester {
           await this.changeAction(`${eachkey} `)
           await this.driver.executeScript(value)
         }
+      } else if (eachkey === 'keyPress') {
+        let value = each[eachkey]
+        let duration = each.duration || 0
+        actions = actions.keyDown(value).pause(duration).keyUp(value)
+        await this.changeAction(`keyDown ${keyPrintMap.get(value)}`)
+        await this.changeAction(`sleep ${duration}ms`)
+        await this.changeAction(`keyUp ${keyPrintMap.get(value)}`)
       } else if (eachkey === 'press' || eachkey === 'release') {
         let value = each[eachkey]
         actions = actions[eachkey](buttonMap[value])

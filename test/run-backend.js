@@ -107,6 +107,12 @@ let tests = {
         //Key.F11,
         //Key.F12,
       ], interval: 50})
+      // key press not work now... wait for upstream to fix some bugs
+      //await t.changeComment('key press', 1000)
+      //await t.actions({actions: [
+      //  "alskdjfalskjflaksjflsakjfd",
+      //  {keyPress: Key.LEFT, duration: 1000}
+      //], interval})
       await t.changeComment('clean input', 1000)
       await t.actions({actions: [
         [Key.CONTROL, 'a'],

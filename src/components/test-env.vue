@@ -148,13 +148,11 @@ export default {
       } else if (type === 'js')   {
         this.addAction({type, name: 'js', count})
       } else if (type === 'keyUp') {
-        if (this.modifiers.includes(name)) {
-          this.addAction({type, name, count})
-        }
+        this.addAction({type, name, count})
       } else if (type === 'keyDown') {
-        if (this.modifiers.includes(name)) {
-          this.addAction({type, name, count})
-        }
+        this.addAction({type, name, count})
+      } else if (type === 'sleep') {
+        this.addAction({type, name, count})
       } else if (type === 'click') {
         this.showMouse(name, type)
         this.addAction({type, name:'CL', count})
