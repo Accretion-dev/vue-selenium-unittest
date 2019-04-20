@@ -2,7 +2,7 @@
   <div style="background:#eee;padding-bottom: 20px">
     <Card :bordered="false">
       <div slot="title">
-        <p> {{ title }}: <test-button :name="name" :running="running"/> </p>
+        <p style="height: 100%"> <Button size="small" @click="open = !open"> {{open ? '-' : '+'}} </Button> {{ title }}: <test-button :name="name" :running="running"/> </p>
       </div>
       <slot> </slot>
     </Card>
@@ -24,10 +24,26 @@ export default {
       type: String,
     },
   },
+  watch: {
+    open (value) {
+      if (value) {
+        this.body.style.display = ""
+        this.$emit('fold', false)
+      } else {
+        this.body.style.display = 'none'
+        this.$emit('fold', true)
+      }
+    }
+  },
   data () {
     return {
-      running: false
+      running: false,
+      open: true,
+      body: null,
     }
+  },
+  mounted () {
+    this.body = this.$el.querySelector('.ivu-card-body')
   }
 }
 </script>

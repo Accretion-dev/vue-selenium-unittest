@@ -5,9 +5,14 @@
       :name="mouseType"
       :class="{[mouseStatus]: true}"
     />
-    <Button style="position: fixed; top: 20px; right: 20px; z-index:999;" @click="showInfo = !showInfo">
-      Info Panel
-    </Button>
+    <span style="position: fixed; top: 20px; right: 20px; z-index:999;">
+      <Button @click="doFoldAll">
+        {{ folding }}
+      </Button>
+      <Button @click="showInfo = !showInfo">
+        Info Panel
+      </Button>
+    </span>
     <div v-show="running||showInfo" class="test-info">
       <clip-loader :loading="true" color="green" size="40px" style=".loader"/>
       <div class="">
@@ -91,6 +96,8 @@ export default {
   },
   data () {
     return {
+      blocks: [],
+      folding: '-',
       running: false,
       comment: '',
       showInfo: false,
@@ -201,8 +208,39 @@ export default {
         this.running = false
       }
     })
+    this.blocks = this.$children.filter(_ => _.$options.name === 'test-block')
+    let testFold = () => {
+      if (this.blocks.every(_ => _.$data.open)) {
+        this.folding = "-"
+      } else if (this.blocks.every(_ => !_.$data.open)) {
+        this.folding = "+"
+      } else {
+        this.folding = "?"
+      }
+    }
+    this.blocks.forEach(vm => {
+      vm.$on("fold", testFold)
+    })
   },
   methods: {
+    doFoldAll () {
+      if (this.folding === '-') {
+        this.folding = '+'
+        this.blocks.forEach(vm => {
+          vm.$data.open = false
+        })
+      } else if (this.folding === '?') {
+        this.folding = '-'
+        this.blocks.forEach(vm => {
+          vm.$data.open = true
+        })
+      } else if (this.folding === '+') {
+        this.folding = '-'
+        this.blocks.forEach(vm => {
+          vm.$data.open = true
+        })
+      }
+    },
     moveMouse ({oldPos, newPos, duration}) {
       console.log(JSON.stringify({oldPos, newPos}))
       this.$refs.mouse.$el.style.top = newPos.y
