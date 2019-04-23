@@ -1,5 +1,5 @@
 <template>
-  <div style="background:#eee;padding-bottom: 20px">
+  <div style="background:#eee;">
     <Card :bordered="false">
       <div slot="title">
         <p style="height: 100%">
@@ -29,6 +29,10 @@ export default {
       required: true,
       type: String,
     },
+    fold: {
+      type: Boolean,
+      default: false,
+    },
   },
   data () {
     return {
@@ -38,6 +42,9 @@ export default {
     }
   },
   watch: {
+    fold (value) {
+      this.open = !value
+    },
     open (value) {
       if (value) {
         this.body.style.display = ""
@@ -50,6 +57,7 @@ export default {
   },
   mounted () {
     this.body = this.$el.querySelector('.ivu-card-body')
+    if (this.fold) this.open = false
   }
 }
 </script>
