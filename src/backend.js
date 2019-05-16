@@ -23,6 +23,7 @@ let keyPrintMap = new Map()
 for (let each of normalKeys) {
   keyPrintMap.set(each, each)
 }
+keyPrintMap.set(' ', '⌴')
 let specialKeys = [
   [Key.CONTROL, 'CONTROL'],
   [Key.ALT, 'ALT'],

@@ -242,7 +242,7 @@ export default {
       }
     },
     moveMouse ({oldPos, newPos, duration}) {
-      console.log(JSON.stringify({oldPos, newPos}))
+      //console.log(JSON.stringify({oldPos, newPos}))
       this.$refs.mouse.$el.style.top = newPos.y
       this.$refs.mouse.$el.style.left = newPos.x
     },
